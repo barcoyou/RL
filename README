@@ -1,0 +1,28 @@
+Reinforcement Learning
+--------------------------------------------------------------------------------
+This repository mainly demonstrates the Reinforcement Learning algorithms
+introduced in the book: "Reinforcement Learning: An Introduction" by
+Sutton and Barto. For more information about this invaluable book, please
+visit http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&tid=7548.
+
+All the codes here are implemented in Erlang, and mainly for instructive
+purposes, but not guaranteed to be good for practical applications.
+---------------------------------------------------------------------------------
+Usage:
+cd RL
+erl -make
+erl -pa ebin
+
+>greedy_bandit:run(10,2000,0.1,"egreedy_0.1.dat").
+%this will generate a data file "egreedy_0.1.dat" recording the play number,
+%average reward got by the agent and the percentage of the optimal action selected.
+%To generate a figure like Fig. 2.1 in the book, run the gnuplot command:
+%set xlabel "Plays", set ylabel "Average Rewards",
+%plot "egreedy_0.1.dat" u 1:2 t "Epsilon Greedy Method with Epsilon=0.1" w l
+%set xlabel "Plays", set ylabel "Percent of Optimal Action",
+%plot "egreedy_0.1.dat" u 1:3 t "Epsilon Greedy Method with Epsilon=0.1" w l
+%
+%For the meaning of the arguments please see the source file "greedy_bandit.erl"
+
+>softmax_bandit:run(10, 2000, 2, "softmax_2.dat").
+%This will simulate the agent which uses softmax to solve the n-Armed Bandit problem
