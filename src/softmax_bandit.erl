@@ -115,6 +115,8 @@ init(N, Temp, Filename) ->
 	#state{qt = [0 || _ <- lists:seq(1,N)],
 		rqt = [gauss_gen:get_number(Gauss,0,1) || _ <- lists:seq(1,N)],
 		action_times = [0 || _ <- lists:seq(1,N)],
+		reward = 0.0,
+		percent =0.0,
 		file = FileIo,
 		env = Gauss,
 		param = Temp}.

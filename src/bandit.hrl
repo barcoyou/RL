@@ -19,9 +19,10 @@
 -record(state, {qt = [], %list()
 				rqt = [], %list()
 				action_times = [], %list()
+				action_value, %item(), action-value pairs selected last time
 				play = 0, %number()
-				reward = 0, %number()
-				percent = 0, %number()
+				reward, %number()s
+				percent, %number()s
 				file, %io_devide()
 				env, %pid()|something else, simulating the environment to interact with
 				param = 0}). %float(), adjustable parameters for some
