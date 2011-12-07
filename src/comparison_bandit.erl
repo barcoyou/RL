@@ -17,7 +17,7 @@
 
 %%% -------------------------------------------------------------------------
 %%% This is an agent using Reinforcement Comparison method to solve bandit  
-%%% problem which is introduced in chapter 2.6 
+%%% problem which is introduced in chapter 2.8 
 %%% of the book <Reinforcement Learning: An Introduction>
 %%% -------------------------------------------------------------------------
 -behaviour(gen_agent).
@@ -58,7 +58,7 @@ run(N, Runs, Beta, Filename) ->
 	io:format("Wrong arguments: N ~p, Runs ~p, Beta ~p, Filename ~p~n", [N, Runs, Beta, Filename]),
 	{error, wrong_arguments}.
 
-policy(#state{action_times=Prob}) ->
+policy(#state{action_prob=Prob}) ->
 	Action = action_with_prob(Prob),
 	{ok, Action};
 policy(_State) ->
@@ -68,7 +68,7 @@ reward(State, Action) ->
 	lists:nth(Action, State#state.rqt).
 
 model(State, {Action, Reward}) ->
-	{Qt, Act_Times} = update(State, Action, Reward),
+	{Qt, Act_Prob} = update(State, Action, Reward),
 	NewPlay = State#state.play + 1,
 	NewReward = (State#state.reward * State#state.play + Reward)/NewPlay,
 	NewPercent =
@@ -80,7 +80,7 @@ model(State, {Action, Reward}) ->
 	end,
 	State#state{qt = Qt,
 			rqt = [gauss_gen:get_number(State#state.env,0,1) || _ <- Qt],
-			action_times = Act_Times,
+			action_prob = Act_Prob,
 			play = NewPlay,
 			reward = NewReward,
 			percent = NewPercent}.
@@ -96,7 +96,7 @@ init(N, Beta, Filename) ->
 	Gauss = gauss_gen:start(),
 	#state{qt = [0 || _ <- lists:seq(1,N)], %Pt
 		rqt = [gauss_gen:get_number(Gauss,0,1) || _ <- lists:seq(1,N)],
-		action_times = [1/N || _ <- lists:seq(1,N)], % used to hold the probabilities of selecting action on the t-th play
+		action_prob = [1/N || _ <- lists:seq(1,N)], % hold the probabilities of selecting action on the t-th play
 		reward = 0.0,
 		percent = 0.0,
 		file = FileIo,
