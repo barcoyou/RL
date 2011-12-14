@@ -26,3 +26,12 @@ erl -pa ebin
 
 >softmax_bandit:run(10, 2000, 2, "softmax_2.dat").
 %This will simulate the agent which uses softmax to solve the n-Armed Bandit problem
+
+....
+
+------------------------------------------------------------------------------------
+moduel gridworld.erl is an example in the chapter 3 of the book, illuminating the
+Bellman equations for state-value function and optimal state-value function.
+To use it:
+>gridworld:run().  %To get the state-values
+>gridworld:run_optimal() % To get the optimal state-values
