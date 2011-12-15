@@ -2,8 +2,8 @@
 %% This source is not limited by any license.
 %%
 %% This module simulates the Gridworld Exmaple 3.8 and Figure 3.5
-%% in the book: <Reinforcement Learning: An Introduction>,and 
-%% compute the state value function in episodic mode
+%% in the book: <Reinforcement Learning: An Introduction>, and
+%% supposing it an episodic task.
 -module(gridworld_episodic).
 -author('barcojie@gmail.com').
 
@@ -14,7 +14,7 @@
 -define(ROWS, 5).
 -define(COLUMNS, 5).
 -define(GAMA, 0.9).
--define(EPISODES, 10).
+-define(EPISODES, 100).
 
 -export([run/0,
 	run_optimal/0]).
@@ -27,63 +27,50 @@
 %% @doc Computes the state-value of the grid points
 %% from index [1,1] to [5,5]
 run() ->
-	grid([?ROWS, ?COLUMNS], value_fun).
+	%One dimensional list representing the state values
+	make_matrix(state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)], ?EPISODES)).
 
 %%
-%% @doc Computes the optimal state-value of the grid points
-%% from index [1,1] to [5,5]
+%% @doc Computes the optimal state-value of the grid
+%% points from index [1,1] to [5,5]
 run_optimal() ->
-	grid([?ROWS, ?COLUMNS], optimal_value_fun).
+	%One dimensional list representing the state values
+	make_matrix(optimal_state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)], ?EPISODES)).
 
 %%% 
 %%% Internal Function
 %%% 
-grid(Dims, Goal) ->
-	grid(Dims, [], Goal).
-grid([H|[]], Index, Goal) ->
-	Bu = fun(X) ->
-			state_value(lists:reverse([X|Index]), Goal)
-	end,
-	init_list(H, Bu, []);
-grid([H|T], Index, Goal) ->
-	Bu = fun(X) ->
-			grid(T, [X|Index], Goal)
-	end,
-	init_list(H, Bu, []).
+state_value(Next, 0) ->
+	[bellman([X, Y], Next) || X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)];
+state_value(Next, N) ->
+	state_value([bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)], N-1).
 
-init_list(0, _Fun, L) ->
-	L;
-init_list(N, Fun, L) ->
-	init_list(N-1, Fun, [Fun(N)|L]).
+optimal_state_value(Next, 0) ->
+	[optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)];
+optimal_state_value(Next, N) ->
+	{New, _} = lists:unzip([optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)]),
+	optimal_state_value(New, N-1).
 
-state_value(State, Goal) ->
-	state_value(State, Goal, ?EPISODES).
-state_value(_State, _Goal, 0) ->
-	0;
-state_value(State, Goal, N) ->
-	state_value(State, action_set(State), Goal, N).
-state_value(State, Actions, value_fun, N) ->
+bellman(State, Next) ->
 	lists:foldl(fun(A, Acc1) ->
 				Acc1+policy(State, A)*lists:foldl(fun(Sp, Acc2) ->
-							Acc2+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*state_value(Sp, value_fun, N-1))
+							Acc2+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Next))
 					end,
 					0,
 					transition(State, A))
 		end,
 		0,
-		Actions);
-state_value(State, Actions, optimal_value_fun, N) ->
-	Q_A = [lists:foldl(fun(Sp, Acc) ->
-					Acc+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*state_value(Sp, optimal_value_fun, N-1))
+		action_set(State)).
+
+optimal_bellman(State, Next) ->
+	L = [lists:foldl(fun(Sp, Acc) ->
+					Acc+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Next))
 			end,
 			0,
-			transition(State, A)) || A <- Actions],
-	if
-		N==?EPISODES ->
-			{lists:max(Q_A), max_action(lists:max(Q_A), Q_A, Actions)};
-		true ->
-			lists:max(Q_A)
-	end.
+			transition(State, A)) || A <- action_set(State)],
+	Max = lists:max(L),
+	{Max, max_actions(Max, L, action_set(State))}.
+
 
 action_set(_State) ->
 	[left, right, up, down].
@@ -152,14 +139,23 @@ reward([Sh,St], [Sph,Spt], _A) ->
 			?REWARD2	
 	end.
 
-max_action(Max, Q, A) ->
-	max_action(Max, Q, A, []).
-max_action(_, [], [], L) ->
+make_matrix(List) ->
+	Fun = fun([X,Y]) ->
+			lists:nth(?ROWS*(X-1)+Y, List)
+	end,
+	matrix:gen([?ROWS, ?COLUMNS], Fun).
+
+get_state_var([R, C], VarL) ->
+	lists:nth(?ROWS*(R-1)+C, VarL).
+
+max_actions(Max, Values, Actions) ->
+	max_actions(Max, Values, Actions, []).
+max_actions(_, [], [], L) ->
 	L;
-max_action(Max, [Qh|Qt], [Ah|At], L) ->
+max_actions(Max, [Vh|Vt], [Ah|At], L) ->
 	if
-		Max==Qh ->
-			max_action(Max, Qt, At, [Ah|L]);
+		Max == Vh ->
+			max_actions(Max, Vt, At, [Ah|L]);
 		true ->
-			max_action(Max, Qt, At, L)
+			max_actions(Max, Vt, At, L)
 	end.
