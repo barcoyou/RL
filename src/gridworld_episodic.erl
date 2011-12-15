@@ -17,7 +17,9 @@
 -define(EPISODES, 100).
 
 -export([run/0,
-	run_optimal/0]).
+		run_optimal/0,
+		run_inplace/0,
+		run_optimal_inplace/0]).
 
 %%%
 %%% API
@@ -37,6 +39,17 @@ run_optimal() ->
 	%One dimensional list representing the state values
 	make_matrix(optimal_state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)], ?EPISODES)).
 
+%% @doc Computes the state-value of the grid points
+%% with in-place algorithm introduced in the chapter 4.1 of the book
+run_inplace() ->
+	make_matrix(state_value_inplace([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)], ?EPISODES,
+			[],[[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])).
+
+%% @doc Computes the optimal state-value of the grid points
+%% with in-place algorithm introduced in the chapter 4.1 of the book
+run_optimal_inplace() ->
+	make_matrix(optimal_state_value_inplace([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)], ?EPISODES,
+			[],[[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])).
 %%% 
 %%% Internal Function
 %%% 
@@ -48,8 +61,21 @@ state_value(Next, N) ->
 optimal_state_value(Next, 0) ->
 	[optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)];
 optimal_state_value(Next, N) ->
-	{New, _} = lists:unzip([optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)]),
-	optimal_state_value(New, N-1).
+	optimal_state_value([optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)], N-1).
+
+state_value_inplace([], 0, L, []) ->
+	lists:reverse(L);
+state_value_inplace([Vh|Vt], N, L, [Ih|It]) ->
+	state_value_inplace(Vt, N, [bellman(Ih, lists:reverse(L)++[Vh]++Vt)|L], It);
+state_value_inplace([], N, L, []) ->
+	state_value_inplace(lists:reverse(L), N-1, [], [[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)]).
+	
+optimal_state_value_inplace([], 0, L, []) ->
+	lists:reverse(L);
+optimal_state_value_inplace([Vh|Vt], N, L, [Ih|It]) ->
+	optimal_state_value_inplace(Vt, N, [optimal_bellman(Ih, lists:reverse(L)++[Vh]++Vt)|L], It);
+optimal_state_value_inplace([], N, L, []) ->
+	optimal_state_value_inplace(lists:reverse(L), N-1, [], [[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)]).
 
 bellman(State, Next) ->
 	lists:foldl(fun(A, Acc1) ->
@@ -146,7 +172,12 @@ make_matrix(List) ->
 	matrix:gen([?ROWS, ?COLUMNS], Fun).
 
 get_state_var([R, C], VarL) ->
-	lists:nth(?ROWS*(R-1)+C, VarL).
+	case lists:nth(?ROWS*(R-1)+C, VarL) of
+		{V, _A} ->
+			V;
+		Value ->
+			Value
+	end.
 
 max_actions(Max, Values, Actions) ->
 	max_actions(Max, Values, Actions, []).
