@@ -17,7 +17,9 @@
 -define(DELTA, 0.000001).
 
 -export([run/0,
-	run_optimal/0]).
+		run_optimal/0,
+		run_inplace/0,
+		run_optimal_inplace/0]).
 
 %%%
 %%% API
@@ -37,6 +39,18 @@ run_optimal() ->
 	%One dimensional list representing the state values
 	make_matrix(optimal_state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)])).
 
+%% @doc Computes the state-value of the grid points
+%% with in-place algorithm introduced in the chapter 4.1 of the book
+run_inplace() ->
+	make_matrix(state_value_inplace([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)],
+			[],[[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])).
+
+%% @doc Computes the optimal state-value of the grid points
+%% with in-place algorithm introduced in the chapter 4.1 of the book
+run_optimal_inplace() ->
+	make_matrix(optimal_state_value_inplace([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)],
+			[],[[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])).
+
 %%% 
 %%% Internal Function
 %%% 
@@ -52,13 +66,40 @@ state_value(Next) ->
 
 optimal_state_value(Next) ->
 	Current = [optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)],
-	{Value, _} = lists:unzip(Current),
-	case delta(Value, Next)<?DELTA of
+	{V, _A} = lists:unzip(Current),
+	case delta(V, Next)<?DELTA of
 		true ->
 			Current;
 		false ->
-			optimal_state_value(Value)
+			optimal_state_value(V)
 	end.
+
+state_value_inplace([], L, []) ->
+	Next = lists:reverse(L),
+	Current = [bellman([X, Y], Next) || X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)],
+	Delta = delta(Current, Next),
+	if
+		Delta < ?DELTA ->
+			Current;
+		true ->
+			state_value_inplace(Current, [], [[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])
+	end;
+state_value_inplace([Vh|Vt], L, [Ih|It]) ->
+	state_value_inplace(Vt, [bellman(Ih, lists:reverse(L)++[Vh]++Vt)|L], It).
+	
+optimal_state_value_inplace([], L, []) ->
+	{Next, _} = lists:unzip(lists:reverse(L)),
+	Current = [optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)],
+	{V, _A} = lists:unzip(Current),
+	case delta(V, Next)<?DELTA of
+		true ->
+			Current;
+		false ->
+			optimal_state_value_inplace(V, [], [[X,Y]||X<-lists:seq(1,?ROWS),Y<-lists:seq(1,?COLUMNS)])
+	end;
+optimal_state_value_inplace([Vh|Vt], L, [Ih|It]) ->
+	optimal_state_value_inplace(Vt, [optimal_bellman(Ih, lists:reverse(L)++[Vh]++Vt)|L], It).
+
 
 bellman(State, Next) ->
 	lists:foldl(fun(A, Acc1) ->
@@ -162,7 +203,12 @@ make_matrix(List) ->
 	matrix:gen([?ROWS, ?COLUMNS], Fun).
 
 get_state_var([R, C], VarL) ->
-	lists:nth(?ROWS*(R-1)+C, VarL).
+	case lists:nth(?ROWS*(R-1)+C, VarL) of
+		{V, _} ->
+			V;
+		Value ->
+			Value
+	end.
 
 max_actions(Max, Values, Actions) ->
 	max_actions(Max, Values, Actions, []).
