@@ -2,7 +2,8 @@
 %% This source is not limited by any license.
 %%
 %% This module simulates the Gridworld Exmaple 3.8 and Figure 3.5
-%% in the book: <Reinforcement Learning: An Introduction>
+%% in the book: <Reinforcement Learning: An Introduction>, and
+%% supposing it an episodic task.
 -module(gridworld).
 -author('barcojie@gmail.com').
 
@@ -27,49 +28,42 @@
 %% from index [1,1] to [5,5]
 run() ->
 	%One dimensional list representing the state values
-	make_matrix(catch(state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)]))).
+	make_matrix(state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)])).
 
 %%
 %% @doc Computes the optimal state-value of the grid
 %% points from index [1,1] to [5,5]
 run_optimal() ->
 	%One dimensional list representing the state values
-	make_matrix(catch(optimal_state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)]))).
+	make_matrix(optimal_state_value([0.0 || _X <-lists:seq(1,?ROWS), _Y <-lists:seq(1,?COLUMNS)])).
 
 %%% 
 %%% Internal Function
 %%% 
-state_value(Old) ->
-	New = [bellman([X, Y], Old)
-		|| X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)],
-	Delta = delta(New, Old),
+state_value(Next) ->
+	Current = [bellman([X, Y], Next) || X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)],
+	Delta = delta(Current, Next),
 	if
 		Delta < ?DELTA ->
-			throw(New);
+			Current;
 		true ->
-			[bellman([X,Y], state_value(New))
-					|| X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)]
+			state_value(Current)
 	end.
 
-
-optimal_state_value(Old) ->
-	WithAction = [optimal_bellman([X,Y], Old)
-		|| X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)],
-	{New, _} = lists:unzip(WithAction),
-	Delta = delta(New, Old),
-	if
-		Delta < ?DELTA ->
-			throw(WithAction);
+optimal_state_value(Next) ->
+	Current = [optimal_bellman([X,Y], Next) || X <-lists:seq(1,?ROWS), Y <- lists:seq(1,?COLUMNS)],
+	{Value, _} = lists:unzip(Current),
+	case delta(Value, Next)<?DELTA of
 		true ->
-			{Var, _A} = lists:unzip([optimal_bellman([X,Y], optimal_state_value(New))
-					|| X <-lists:seq(1,?ROWS), Y <-lists:seq(1,?COLUMNS)]),
-			Var
+			Current;
+		false ->
+			optimal_state_value(Value)
 	end.
 
-bellman(State, Old) ->
+bellman(State, Next) ->
 	lists:foldl(fun(A, Acc1) ->
 				Acc1+policy(State, A)*lists:foldl(fun(Sp, Acc2) ->
-							Acc2+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Old))
+							Acc2+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Next))
 					end,
 					0,
 					transition(State, A))
@@ -77,9 +71,9 @@ bellman(State, Old) ->
 		0,
 		action_set(State)).
 
-optimal_bellman(State, Old) ->
+optimal_bellman(State, Next) ->
 	L = [lists:foldl(fun(Sp, Acc) ->
-					Acc+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Old))
+					Acc+transition_prob(State, Sp, A)*(reward(State, Sp, A)+?GAMA*get_state_var(Sp, Next))
 			end,
 			0,
 			transition(State, A)) || A <- action_set(State)],
