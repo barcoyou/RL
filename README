@@ -35,3 +35,13 @@ Bellman equations for state-value function and optimal state-value function.
 To use it:
 >gridworld:run().  %To get the state-values
 >gridworld:run_optimal() % To get the optimal state-values
+
+------------------------------------------------------------------------------------
+chapter 4
+
+module policy_eva.erl is an example for iterative policy evaluation.
+>policy_eva:start().
+>policy_eva:run(equi_prob).  %To evaluate the policy of equiprobably selecting actions
+>policy_eva:pause(). %To pause the ongoing evaluation
+>policy_eva:run(optimal). %To evaluate the optimal policy
+>policy_eva:stop(). %To stop the process.
