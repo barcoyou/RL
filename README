@@ -39,9 +39,20 @@ To use it:
 ------------------------------------------------------------------------------------
 chapter 4
 
-module policy_eva.erl is an example for iterative policy evaluation.
+module policy_eva.erl is an example of iterative policy evaluation.
 >policy_eva:start().
 >policy_eva:run(equi_prob).  %To evaluate the policy of equiprobably selecting actions
 >policy_eva:pause(). %To pause the ongoing evaluation
 >policy_eva:run(optimal). %To evaluate the optimal policy
 >policy_eva:stop(). %To stop the process.
+
+module car_rental.erl is an example of the Policy Iteration
+>car_rental:start().
+>car_rental:run()  %To start the policy iteration process
+>car_rental:print()  % To see the final policy and value fuctions
+>car_rental:stop(). %To stop the state machine
+
+module gambler.erl is an example of Value Iteration
+>gambler:start() % to start the Value Iteration process
+>gambler:print(). % to print out the final policy and value function
+>gambler:stop(). %to stop the state machine
