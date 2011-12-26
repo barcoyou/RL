@@ -56,3 +56,11 @@ module gambler.erl is an example of Value Iteration
 >gambler:start() % to start the Value Iteration process
 >gambler:print(). % to print out the final policy and value function
 >gambler:stop(). %to stop the state machine
+
+
+--------------------------------------------------------------------------------------
+Chapter 5
+
+moduel mc_blackjack.erl simulates the Monte Carlo method solving the balckjack problem
+>mc_blackjack:run(5000). %Sample 5000 episodes
+
