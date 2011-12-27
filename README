@@ -64,3 +64,5 @@ Chapter 5
 moduel mc_blackjack.erl simulates the Monte Carlo method solving the balckjack problem
 >mc_blackjack:run(5000). %Sample 5000 episodes
 
+moduel es_blackjak.erl simulates the ES Monte Carlo method solving the blackjack problem
+>es_blackjack:run(5000). %Sample 5000 episodes with Exploring Starting
