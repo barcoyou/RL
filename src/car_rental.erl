@@ -33,7 +33,6 @@
 		code_change/4,
 		terminate/3,
 		handle_info/3]).
--compile([export_all]).
 -record(state, {values, policy}).
 
 
